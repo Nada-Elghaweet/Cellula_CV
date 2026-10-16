@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Water Segmentation</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f2f7fb; margin: 0; color: #12324a; }
+  main { max-width: 760px; margin: 40px auto; padding: 0 16px; }
+  h1 { margin-bottom: 4px; }
+  p.sub { margin-top: 0; color: #4a6a82; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  button { background: #1f7ae0; color: #fff; border: 0; padding: 10px 18px; border-radius: 8px; font-size: 15px; cursor: pointer; }
+  button:disabled { background: #9db9d6; cursor: default; }
+  .row { display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .col { flex: 1; min-width: 240px; text-align: center; }
+  img { width: 100%; image-rendering: pixelated; border-radius: 8px; background: #000; }
+  #msg { margin-top: 14px; font-weight: 600; }
+  .err { color: #c0392b; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Water Segmentation</h1>
+  <p class="sub">Upload a 12-channel .npy patch (12 x H x W, values 0 to 1). H and W must be divisible by 32.</p>
+  <div class="card">
+    <input type="file" id="file" accept=".npy">
+    <button id="go" disabled>Segment</button>
+    <div id="msg"></div>
+    <div class="row" id="out" style="display:none">
+      <div class="col"><h3>RGB preview</h3><img id="prev" alt="RGB preview"></div>
+      <div class="col"><h3>Water mask</h3><img id="mask" alt="Predicted mask"></div>
+    </div>
+  </div>
+</main>
+<script>
+  const fileEl = document.getElementById("file");
+  const go = document.getElementById("go");
+  const msg = document.getElementById("msg");
+  const out = document.getElementById("out");
+
+  fileEl.addEventListener("change", () => { go.disabled = !fileEl.files.length; });
+
+  go.addEventListener("click", async () => {
+    const fd = new FormData();
+    fd.append("file", fileEl.files[0]);
+    go.disabled = true;
+    msg.className = "";
+    msg.textContent = "Running...";
+    out.style.display = "none";
+    try {
+      const res = await fetch("/predict?format=json", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "request failed");
+      document.getElementById("prev").src = "data:image/png;base64," + data.preview_png_b64;
+      document.getElementById("mask").src = "data:image/png;base64," + data.mask_png_b64;
+      msg.textContent = "Water: " + data.water_pct + "% of pixels (" + data.height + " x " + data.width + ")";
+      out.style.display = "flex";
+    } catch (e) {
+      msg.className = "err";
+      msg.textContent = "Error: " + e.message;
+    } finally {
+      go.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
