@@ -1,0 +1,36 @@
+{
+  "model": "ResCNNLSTM (residual CNN encoder + BiLSTM), trained from scratch",
+  "input_name": "clip",
+  "input_shape": [
+    "batch",
+    16,
+    3,
+    144,
+    176
+  ],
+  "input_dtype": "float32",
+  "input_range": "[0, 1], RGB, no mean/std normalization",
+  "preprocessing": {
+    "frames": 16,
+    "sampling": "midpoint of T equal segments over the full video",
+    "resize_hw": [
+      160,
+      196
+    ],
+    "center_crop_hw": [
+      144,
+      176
+    ]
+  },
+  "output_name": "logits",
+  "classes": {
+    "0": "normal",
+    "1": "shoplifting"
+  },
+  "test_metrics": {
+    "accuracy": 0.9457,
+    "precision": 0.9773,
+    "recall": 0.8776,
+    "f1": 0.9247
+  }
+}
